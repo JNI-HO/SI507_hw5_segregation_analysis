@@ -2,9 +2,20 @@ import numpy as np
 import json
 import os
 import random
+import random as random
+from matplotlib.path import Path
+import matplotlib.pyplot as plt
+from matplotlib.patches import Polygon
+import numpy as np
+import requests
 random.seed(17)
 
-
+GRADE_COLOR = {
+    'A': 'darkgreen',
+    'B': 'cornflowerblue',
+    'C': 'gold',
+    'D': 'maroon'
+}
 class DetroitDistrict:
     """
     A class representing a district in Detroit with attributes related to historical redlining.
@@ -64,9 +75,16 @@ class DetroitDistrict:
 
 
     """
-    def __init__(self, coordinates, holcGrade, id, description, holcColor = None, randomLat=None, randomLong=None, medIncome=None, censusTract=None):
-        pass
-
+    def __init__(self, coordinates, holcGrade, id, description = None, holcColor = None, randomLat = None, randomLong = None, medIncome = None, censusTract = None):
+        self.coordinates: list[list] = coordinates
+        self.holcGrade: str = holcGrade
+        self.id: str = id
+        self.description: str | None = description
+        self.randomLat: str | None = randomLat
+        self.randomLong: str | None = randomLat
+        self.medIncome: str | None = medIncome
+        self.censusTract: str | None = censusTract
+        self.holcColor = GRADE_COLOR[self.holcGrade]
 
 
 class RedLines:
@@ -80,13 +98,14 @@ class RedLines:
 
     """
 
-    def __init__(self,cacheFile = None):
+    def __init__(self, cacheFile = None):
         """
         Initializes the RedLines class without any districts.
         assign districts attribute to an empty list
         """
-        pass
-        
+        if not self.loadCache(cacheFile):
+            self.districts = []
+
 
     def createDistricts(self, fileName):
         """
@@ -107,17 +126,40 @@ class RedLines:
         one of the dict key with only number.
 
         """
-        f = open(fileName)
-        data = json.load(f)
-        f.close()
-        pass
+
+        if not self.cache_data:
+            with open(fileName, "r") as file:
+                data = json.load(file)
+                for d in data['features']:
+                    print(d)
+                    self.districts.append(DetroitDistrict(
+                        coordinates = d['geometry']['coordinates'][0][0], 
+                        holcGrade = d['properties']['holc_grade'],
+                        id = d['properties']['holc_id'],
+                        description = d['properties']['area_description_data']
+                        ))
+        else:
+            self.districts = [ DetroitDistrict(**data) for data in self.cache_data]
+
 
     def plotDistricts(self):
         """
         Plots the districts using matplotlib, displaying each district's location and color.
         Name it redlines_graph.png and save it to the current directory. 
         """
-        pass
+        _, ax = plt.subplots()
+
+        for district in self.districts:
+            # Create polygon from coordinates
+            polygon = Polygon(district.coordinates, facecolor = district.holcColor,
+                              edgecolor='black', linewidth=0.5)
+            ax.add_patch(polygon)
+
+        ax.autoscale()
+        plt.rcParams["figure.figsize"] = (15, 15)
+        plt.savefig('redlines_graph.png', dpi=300, bbox_inches='tight')
+        plt.show()
+        
 
     def generateRandPoint(self):
         """
@@ -137,8 +179,21 @@ class RedLines:
         This method assumes the 'self.districts' attribute has been populated with DetroitDistrict instances.
 
         """
-        pass
-  
+
+        if self.cache_data:
+            return
+        xgrid = np.arange(-83.5, -82.8, .004)
+        ygrid = np.arange(42.1, 42.6, .004)
+        xmesh, ymesh = np.meshgrid(xgrid, ygrid)
+        points = np.vstack((xmesh.flatten(), ymesh.flatten())).T
+        for j in self.districts:
+            p = Path(j.coordinates)
+            grid = p.contains_points(points)
+            point = points[random.choice(list(np.where(grid)[0]))]
+            print(j, " : ", point)
+            j.randomLong = point[0]
+            j.randomLat = point[1]
+
         
     def fetchCensus(self):
 
@@ -170,9 +225,17 @@ class RedLines:
 
         """
 
-        
+        if self.cache_data:
+            return
+        for district in self.districts:
+            lat = district.randomLat
+            lon = district.randomLong
+            url = f"https://geo.fcc.gov/api/census/area?lat={lat}&lon={lon}&censusYear=2010&format=json"
+            
+            response = requests.get(url).json()
+            tract_code = response["results"][0]["block_fips"]
+            district.censusTract = tract_code
 
-        pass
 
     def fetchIncome(self):
 
@@ -190,8 +253,26 @@ class RedLines:
         is not available or is negative, the median income is set to 0.
 
         """
+
+        if self.cache_data:
+            return
+        url = "https://api.census.gov/data/2018/acs/acs5?get=NAME,B19013_001E&for=tract:*&in=state:26&in=county:163"
+        response = requests.get(url).json()
+        tract_to_income = {}
+        for _data in response[1:]:
+            if int(_data[1]) < 0:
+                tract_to_income[_data[4]] = 0
+            else:
+                tract_to_income[_data[4]] = int(_data[1])
+
+        for dist in self.districts:
+            tract = dist.censusTract[5:11]
+            if tract in tract_to_income:
+                income = tract_to_income[tract]
+                dist.medIncome = income
+            else:
+                dist.medIncome = 0
         
-        pass
 
     def cacheData(self, fileName):
         """
@@ -206,8 +287,12 @@ class RedLines:
         filename : str
             The name of the file where the district data will be saved.
         """
-        
-        pass
+        cache_data = []
+        for dist in self.districts:
+            cache_data.append(dist.__dict__)
+        with open(fileName, "w") as file:
+            json.dump(cache_data, file, indent = 4)
+            
 
     def loadCache(self, fileName):
         """
@@ -224,7 +309,13 @@ class RedLines:
         bool
             True if the data was successfully loaded, False otherwise.
         """
-        pass
+        file_list = os.listdir("./")
+        if fileName in file_list:
+            with open(fileName, "r") as file:
+                self.cache_data = json.load(file)
+            return True
+        else:
+            return False
 
     def calcIncomeStats(self):
         """
@@ -341,14 +432,14 @@ class RedLines:
 # Use main function to test your class implementations.
 # Feel free to modify the example main function.
 def main():
-    myRedLines = RedLines()
+    myRedLines = RedLines('redlines_cache.json')
     myRedLines.createDistricts('redlines_data.json')
     myRedLines.plotDistricts()
     myRedLines.generateRandPoint()
     myRedLines.fetchCensus()
     myRedLines.fetchIncome()
-    myRedLines.calcRank()  # Assuming you have this method
-    myRedLines.calcPopu()  # Assuming you have this method
+    # myRedLines.calcRank()  # Assuming you have this method
+    # myRedLines.calcPopu()  # Assuming you have this method
     myRedLines.cacheData('redlines_cache.json')
     myRedLines.loadCache('redlines_cache.json')
     # Add any other function calls as needed
