@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 import numpy as np
 import requests
+from statistics import mean, median
 random.seed(17)
 
 GRADE_COLOR = {
@@ -333,7 +334,19 @@ class RedLines:
         list
             A list containing mean and median income values for each district grade in the order A, B, C, D.
         """
-        pass
+        Income_Stat = []
+        for grade in ['A', 'B', 'C', 'D']:
+            for dist in self.districts:
+                g = dist.holcGrade
+                if g == grade and dist.medIncome != 0:
+                    Income_Stat.append(dist.medIncome)
+                
+                avg = int(mean(Income_Stat))
+                med = int(median(Income_Stat))
+                Income_Stat.append(avg)
+                Income_Stat.append(med)
+
+        return Income_Stat
 
 
     def findCommonWords(self):
@@ -364,7 +377,32 @@ class RedLines:
         # List of common filler words to exclude, you could add more if needed.
         filler_words = set(['the', 'of', 'and', 'in', 'to', 'a', 'is', 'for', 'on', 'that'])
 
-        pass
+        grade_texts = {"A": "", "B": "", "C": "", "D": ""}
+        for d in self.districts:
+            grade = getattr(d, "holc_grade", d.holcGrade)
+            grade_texts[grade] += " " + d.description.lower()
+
+        grade_words = {}
+        for grade, text in grade_texts.items():
+            words = re.findall(r"[a-z]+", text)  
+            words = [w for w in words if w not in filler_words]
+            grade_words[grade] = Counter(words)
+
+        used_words = set()
+        result = []
+
+        # 依序處理 A, B, C, D
+        for grade in ["A", "B", "C", "D"]:
+            common = []
+            for word, count in grade_words[grade].most_common():
+                if word not in used_words:   
+                    common.append(word)
+                    used_words.add(word)
+                if len(common) == 10:        
+                    break
+            result.append(common)
+
+        return result
     
     def calcRank(self):
         """
@@ -432,7 +470,7 @@ class RedLines:
 # Use main function to test your class implementations.
 # Feel free to modify the example main function.
 def main():
-    myRedLines = RedLines('redlines_cache.json')
+    myRedLines = RedLines()
     myRedLines.createDistricts('redlines_data.json')
     myRedLines.plotDistricts()
     myRedLines.generateRandPoint()
