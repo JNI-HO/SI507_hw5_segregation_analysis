@@ -331,7 +331,7 @@ class RedLines:
         for grade in ['A', 'B', 'C', 'D']:
             for dist in self.districts:
                 g = dist.holcGrade
-                if g == grade and dist.medIncome != 0:
+                if g == grade:
                     Income_Stat.append(dist.medIncome)
                 
                 avg = int(mean(Income_Stat))
