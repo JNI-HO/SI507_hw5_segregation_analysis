@@ -370,7 +370,7 @@ class RedLines:
 
         """
         # List of common filler words to exclude, you could add more if needed.
-        filler_words = set(['the', 'of', 'and', 'in', 'to', 'a', 'is', 'for', 'on', 'that'])
+        filler_words = ['the', 'of', 'and', 'in', 'to', 'a', 'is', 'for', 'on', 'that']
 
         grade_texts = {"A": "", "B": "", "C": "", "D": ""}
         for d in self.districts:
