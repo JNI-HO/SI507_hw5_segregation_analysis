@@ -229,7 +229,7 @@ class RedLines:
             
             response = requests.get(url).json()
             tract_code = response["results"][0]["block_fips"]
-            district.censusTract = tract_code
+            district.censusTract = tract_code[2:11]
 
 
     def fetchIncome(self):
