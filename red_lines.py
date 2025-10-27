@@ -133,18 +133,11 @@ class RedLines:
             data = json.load(file)
             
             for d in data['features']:
-                if d['geometry']['type'] == "Polygon":
-                    coords = d['geometry']['coordinates'][0]
-                elif d['geometry']['type'] == "MultiPolygon":
-                    coords = d['geometry']['coordinates'][0][0]
-                else:
-                    continue
-
                 self.districts.append(DetroitDistrict(
-                    coordinates = coords,
+                    coordinates = d['geometry']['coordinates'][0][0],
                     holcGrade = d['properties']['holc_grade'],
                     id = d['properties']['holc_id'],
-                    description = d['properties']['area_description_data']
+                    description = d['properties']['area_description_data']['8']
                     ))
                 
 
