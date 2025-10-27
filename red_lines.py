@@ -249,17 +249,20 @@ class RedLines:
 
         """
 
-        url = "https://api.census.gov/data/2018/acs/acs5?get=NAME,B19013_001E&for=tract:*&in=state:26&in=county:163"
+        url = "https://api.census.gov/data/2018/acs/acs5?get=NAME,B19013_001E&for=tract:*&in=state:26"
         response = requests.get(url).json()
         tract_to_income = {}
         for _data in response[1:]:
+            county = _data[3]
+            tract_6 = _data[4]
+            tract_9 = f"{county}{tract_6}"
             if int(_data[1]) < 0:
-                tract_to_income[_data[4]] = 0
+                tract_to_income[tract_9] = 0
             else:
-                tract_to_income[_data[4]] = int(_data[1])
+                tract_to_income[tract_9] = int(_data[1])
 
         for dist in self.districts:
-            tract = dist.censusTract[2:]
+            tract = dist.censusTract
             if tract in tract_to_income:
                 income = tract_to_income[tract]
                 dist.medIncome = income
