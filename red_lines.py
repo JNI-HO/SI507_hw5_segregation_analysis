@@ -2,13 +2,13 @@ import numpy as np
 import json
 import os
 import random
-import random as random
 from matplotlib.path import Path
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 import numpy as np
 import requests
 from statistics import mean, median
+import re
 random.seed(17)
 
 GRADE_COLOR = {
@@ -333,14 +333,13 @@ class RedLines:
         Income_Stat = []
         for grade in ['A', 'B', 'C', 'D']:
             for dist in self.districts:
-                g = dist.holcGrade
-                if g == grade and dist.medIncome != 0:
+                if dist.holcGrade == grade and dist.medIncome != 0:
                     Income_Stat.append(dist.medIncome)
                 
-                avg = int(mean(Income_Stat))
-                med = int(median(Income_Stat))
-                Income_Stat.append(avg)
-                Income_Stat.append(med)
+            avg = int(mean(Income_Stat))
+            med = int(median(Income_Stat))
+            Income_Stat.append(avg)
+            Income_Stat.append(med)
 
         return Income_Stat
 
@@ -387,7 +386,6 @@ class RedLines:
         used_words = set()
         result = []
 
-        # 依序處理 A, B, C, D
         for grade in ["A", "B", "C", "D"]:
             common = []
             for word, count in grade_words[grade].most_common():
