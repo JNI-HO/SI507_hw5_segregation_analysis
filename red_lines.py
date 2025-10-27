@@ -254,8 +254,8 @@ class RedLines:
         response = requests.get(url).json()
         tract_to_income = {}
         for _data in response[1:]:
-            county = _data[3]
-            tract_6 = _data[4]
+            county = str(_data[3])
+            tract_6 = str(_data[4])
             tract_9 = f"{county}{tract_6}"
             if int(_data[1]) < 0:
                 tract_to_income[tract_9] = 0
