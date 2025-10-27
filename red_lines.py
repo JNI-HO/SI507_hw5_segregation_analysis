@@ -259,7 +259,7 @@ class RedLines:
                 tract_to_income[_data[4]] = int(_data[1])
 
         for dist in self.districts:
-            tract = dist.censusTract[5:11]
+            tract = dist.censusTract[2:]
             if tract in tract_to_income:
                 income = tract_to_income[tract]
                 dist.medIncome = income
@@ -331,7 +331,7 @@ class RedLines:
         for grade in ['A', 'B', 'C', 'D']:
             for dist in self.districts:
                 g = dist.holcGrade
-                if g == grade:
+                if g == grade and dist.medIncome != 0:
                     Income_Stat.append(dist.medIncome)
                 
                 avg = int(mean(Income_Stat))
