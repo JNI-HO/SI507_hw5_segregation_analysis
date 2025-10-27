@@ -10,6 +10,8 @@ import requests
 from statistics import mean, median
 import re
 from collections import Counter
+from decimal import Decimal, ROUND_HALF_UP
+
 random.seed(17)
 
 GRADE_COLOR = {
@@ -338,8 +340,8 @@ class RedLines:
                 if dist.holcGrade == grade and dist.medIncome != 0:
                     incomes.append(dist.medIncome)
                 
-            avg = int(mean(incomes))
-            med = int(median(incomes))
+            avg = int(Decimal(mean(incomes)).quantize(0, rounding = ROUND_HALF_UP))
+            med = int(Decimal(median(incomes)).quantize(0, rounding = ROUND_HALF_UP))
             
             Income_Stat.append(avg)
             Income_Stat.append(med)
@@ -477,20 +479,6 @@ def main():
     myRedLines.cacheData('redlines_cache.json')
     myRedLines.loadCache('redlines_cache.json')
     # Add any other function calls as needed
-    for d in myRedLines.districts:
-        if d.holcGrade == "A":
-            d.medIncome = 100000
-        elif d.holcGrade == "B":
-            d.medIncome = 80000
-        elif d.holcGrade == "C":
-            d.medIncome = 60000
-        elif d.holcGrade == "D":
-            d.medIncome = 40000
-        else:
-            d.medIncome = 0
-
-    print("測試 calcIncomeStats 輸出：")
-    print(myRedLines.calcIncomeStats())
 
 
 if __name__ == '__main__':
