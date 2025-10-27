@@ -333,8 +333,8 @@ class RedLines:
         """
         Income_Stat = []
         for grade in ['A', 'B', 'C', 'D']:
+            incomes = []
             for dist in self.districts:
-                incomes = []
                 if dist.holcGrade == grade and dist.medIncome != 0:
                     incomes.append(dist.medIncome)
                 
@@ -477,8 +477,21 @@ def main():
     myRedLines.cacheData('redlines_cache.json')
     myRedLines.loadCache('redlines_cache.json')
     # Add any other function calls as needed
+    for d in myRedLines.districts:
+        if d.holcGrade == "A":
+            d.medIncome = 100000
+        elif d.holcGrade == "B":
+            d.medIncome = 80000
+        elif d.holcGrade == "C":
+            d.medIncome = 60000
+        elif d.holcGrade == "D":
+            d.medIncome = 40000
+        else:
+            d.medIncome = 0
+
+    print("測試 calcIncomeStats 輸出：")
+    print(myRedLines.calcIncomeStats())
+
 
 if __name__ == '__main__':
     main()
-
-
