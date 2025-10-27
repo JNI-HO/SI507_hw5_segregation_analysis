@@ -9,6 +9,7 @@ import numpy as np
 import requests
 from statistics import mean, median
 import re
+from collections import Counter
 random.seed(17)
 
 GRADE_COLOR = {
@@ -333,11 +334,13 @@ class RedLines:
         Income_Stat = []
         for grade in ['A', 'B', 'C', 'D']:
             for dist in self.districts:
+                incomes = []
                 if dist.holcGrade == grade and dist.medIncome != 0:
-                    Income_Stat.append(dist.medIncome)
+                    incomes.append(dist.medIncome)
                 
-            avg = int(mean(Income_Stat))
-            med = int(median(Income_Stat))
+            avg = int(mean(incomes))
+            med = int(median(incomes))
+            
             Income_Stat.append(avg)
             Income_Stat.append(med)
 
@@ -374,14 +377,13 @@ class RedLines:
 
         grade_texts = {"A": "", "B": "", "C": "", "D": ""}
         for d in self.districts:
-            grade = getattr(d, "holc_grade", d.holcGrade)
-            grade_texts[grade] += " " + d.description.lower()
+            grade_texts[d.holcGrade] += " " + d.description.lower()
 
         grade_words = {}
         for grade, text in grade_texts.items():
             words = re.findall(r"[a-z]+", text)  
             words = [w for w in words if w not in filler_words]
-            grade_words[grade] = filler_words(words)
+            grade_words[grade] = Counter(words)
 
         used_words = set()
         result = []
